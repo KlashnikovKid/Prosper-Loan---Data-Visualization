@@ -1,4 +1,4 @@
-# Prosper-Loan---Data-Visualization
+# Prosper Loan Data Visualization
 
 <h1>Summary</h1>
 
