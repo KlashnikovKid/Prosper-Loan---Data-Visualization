@@ -2,7 +2,9 @@
 
 <h1>Summary</h1>
 
-For my data visualization I chose Prosper's loan data on all the loans that they have issued since 2005. I chose this data set because I was curious about examining the economy in terms of investments being made, people's financial health, and how well certain occupations are doing as the nature of the economy has changed through out the years. The visualization is divided into two charts, the one at the top summarizes the data by the years and another that pops up when a year is selected that shows how all the money has been loaned for that year by occupation. When a year and/or occupation is selected, windows pop up with more details about that data point.
+For my data visualization I chose Prosper's loan data on all the loans that they have issued since 2005. I chose this data set because I was curious about examining the U.S. economy in terms of investments being made, people's financial health, and how well certain occupations are doing as the nature of the economy has changed through out the years. The visualization is divided into two charts, the one at the top summarizes the data by the years and another that pops up when a year is selected that shows how all the money has been loaned for that year by occupation. When a year and/or occupation is selected, windows pop up with more details about that data point.<br /><br />
+
+As you can see from the data, the 2008 financial crisis' impact on income and investments was significant. However, the data also illustrates that economic activity quickly built back up to a peak 2013.
 
 <h1>Design</h1>
 
