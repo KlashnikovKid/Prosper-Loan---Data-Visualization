@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	
+		<title>Prosper loan summary</title>
+		
+		<script src="./d3.min.js" type="text/javascript"></script>
+
+		<script type="text/javascript">
+		
+			// Bind initialization logic to page load. 
+			window.onload = function () {
+				initializeCharts();
+			}
+
+			// Global variables.
+			var overviewChartId = '#overviewChart',
+				detailChartId = '#detailChart',
+				loanSummaryData = null, // Stores the summary data after it has been loaded.
+				occupationSummaryData = null, // Stores the occupation data after it has been loaded.
+				chartHeight = 400,
+				chartWidth = 1060,
+				margin = 40,
+				barWidth = 80,
+				buttonInactiveColor = "grey",
+				buttonActiveColor = "aquamarine",
+				selectedYearId = null, // Keeps track of the currently selected year data point id. Needed for changing the chart and maintaining a selection.
+				selectedOccupationId = null; // Keeps track of the currently selected occupation data point id. Needed for changing the chart and maintaining a selection.
+				
+			// Function called on page load to do all initialization logic.
+			function initializeCharts() {
+				loadData();
+			}
+			
+			// Function called when a year is selected on the main histogram.
+			function updateSelectedYear(id, data) {
+			
+				// Clear chart
+				d3.select(detailChartId).selectAll("*").remove();
+				selectedOccupationId = null; // Clear occupation selection.
+			
+				buildDetailChart(detailChartId, data, chartHeight, barWidth);
+			
+				// If a button is currently selected, set it back to the inactive color.
+				if (selectedYearId != null)
+					d3.select("#yearSelector_" + selectedYearId).attr("fill", buttonInactiveColor);
+					
+				// Cache reference to newly selected button and set it's color to active.
+				selectedYearId = id;
+				d3.select("#yearSelector_" + selectedYearId).attr("fill", buttonActiveColor);
+			
+				// Update the detail chart with the selected year's data.
+				updateYearDetailChart(id, data);
+			}
+			
+			function updateSelectedOccupation(id, data) {
+			
+				// If a button is currently selected, set it back to the inactive color.
+				if (selectedOccupationId != null)
+					d3.select("#occupationSelector_" + selectedOccupationId).attr("fill", buttonInactiveColor);
+					
+				// Cache reference to newly selected button and set it's color to active.
+				selectedOccupationId = id;
+				d3.select("#occupationSelector_" + selectedOccupationId).attr("fill", buttonActiveColor);
+				
+				updateOccupationDetailChart(id, data)
+			}
+		
+			// Sets current chart being displayed in the main histogram.
+			function displayChart(chartType) {
+				
+				// Clear chart
+				d3.select(overviewChartId).selectAll("*").remove();
+
+				// Draw new chart.
+				switch (chartType) {
+					case "loanOriginalAmount":
+						buildLoanSummaryHistogram(loanSummaryData, overviewChartId, 'Amount of money loaned', 'sum_loanOriginalAmount', 'mean_loanOriginalAmount', 'Avg loan amount', 'Total loan amount');
+						break;
+					
+					case "investors":
+						buildLoanSummaryHistogram(loanSummaryData, overviewChartId, 'Number of investors', 'sum_investors', 'mean_investors', 'Avg number of investors', 'Total number of investors');
+						break;
+					
+					case "amountDelinquent":
+						buildLoanSummaryHistogram(loanSummaryData, overviewChartId, 'Amount of money delinquent', 'sum_amountDelinquent', 'mean_amountDelinquent', 'Avg amount of money delinquent', 'Total amount of money delinquent');
+						break;
+
+					case "statedMonthlyIncome":
+						buildLoanSummaryHistogram(loanSummaryData, overviewChartId, 'Stated monthly income', 'sum_statedMonthlyIncome', 'mean_statedMonthlyIncome', 'Avg monthly income', 'Total monthly income');
+						break;
+						
+					case "monthlyLoanPayment":
+						buildLoanSummaryHistogram(loanSummaryData, overviewChartId, 'Monthly loan payment', 'sum_monthlyLoanPayment', 'mean_monthlyLoanPayment', 'Avg loan payment', 'Total loan payment');
+						break;
+				}
+				
+				// Refresh with the currently selected year if any.
+				if (selectedYearId != null)
+					updateSelectedYear(selectedYearId, loanSummaryData);
+			}
+				
+			// Loads all of the data and draws the first chart.
+			function loadData() {
+				
+				d3.csv("prosperLoanData_SummaryByYear.csv", function(error, data) {
+				
+					data.forEach(function(d) {
+						d['Id'] = parseInt(d['Id']);
+						d['ListingCreationYear'] = parseInt(d['ListingCreationYear']);
+						
+						d['mean_loanOriginalAmount'] = parseFloat(d['mean_loanOriginalAmount']);
+						d['mean_investors'] = parseFloat(d['mean_investors']);
+						d['mean_prosperScore'] = parseFloat(d['mean_prosperScore']);
+						d['mean_amountDelinquent'] = parseFloat(d['mean_amountDelinquent']);
+						d['mean_estimatedLoss'] = parseFloat(d['mean_estimatedLoss']);
+						d['mean_estimatedReturn'] = parseFloat(d['mean_estimatedReturn']);
+						d['mean_statedMonthlyIncome'] = parseFloat(d['mean_statedMonthlyIncome']);
+						d['mean_creditScoreRangeLower'] = parseFloat(d['mean_creditScoreRangeLower']);
+						d['mean_monthlyLoanPayment'] = parseFloat(d['mean_monthlyLoanPayment']);
+						d['mean_borrowerAPR'] = parseFloat(d['mean_borrowerAPR']);
+						d['mean_borrowerRate'] = parseFloat(d['mean_borrowerRate']);
+						d['mean_debtToIncomeRatio'] = parseFloat(d['mean_debtToIncomeRatio']);
+						d['mean_term'] = parseFloat(d['mean_term']);
+						
+						d['count'] = parseInt(d['count']);
+						
+						d['sum_loanOriginalAmount'] = parseFloat(d['sum_loanOriginalAmount']);
+						d['sum_investors'] = parseFloat(d['sum_investors']);
+						d['sum_prosperScore'] = parseFloat(d['sum_prosperScore']);
+						d['sum_amountDelinquent'] = parseFloat(d['sum_amountDelinquent']);
+						d['sum_estimatedLoss'] = parseFloat(d['sum_estimatedLoss']);
+						d['sum_estimatedReturn'] = parseFloat(d['sum_estimatedReturn']);
+						d['sum_statedMonthlyIncome'] = parseFloat(d['sum_statedMonthlyIncome'])	
+						d['sum_creditScoreRangeLower'] = parseFloat(d['sum_creditScoreRangeLower'])	
+						d['sum_monthlyLoanPayment'] = parseFloat(d['sum_monthlyLoanPayment'])
+						d['sum_borrowerAPR'] = parseFloat(d['sum_borrowerAPR']);
+						d['sum_borrowerRate'] = parseFloat(d['sum_borrowerRate']);
+						d['sum_debtToIncomeRatio'] = parseFloat(d['sum_debtToIncomeRatio']);
+						d['sum_term'] = parseFloat(d['sum_term']);
+					});
+					
+					loanSummaryData = data;
+					
+					displayChart("loanOriginalAmount");
+				});
+				
+				d3.csv("prosperLoanData_SummaryByYearAndOccupation.csv", function(error, data) {
+				
+					data.forEach(function(d) {
+						d['Id'] = parseInt(d['Id']);
+						d['ListingCreationYear'] = parseInt(d['ListingCreationYear']);
+						
+						d['mean_loanOriginalAmount'] = parseFloat(d['mean_loanOriginalAmount']);
+						d['mean_investors'] = parseFloat(d['mean_investors']);
+						d['mean_prosperScore'] = parseFloat(d['mean_prosperScore']);
+						d['mean_amountDelinquent'] = parseFloat(d['mean_amountDelinquent']);
+						d['mean_estimatedLoss'] = parseFloat(d['mean_estimatedLoss']);
+						d['mean_estimatedReturn'] = parseFloat(d['mean_estimatedReturn']);
+						d['mean_statedMonthlyIncome'] = parseFloat(d['mean_statedMonthlyIncome']);
+						d['mean_creditScoreRangeLower'] = parseFloat(d['mean_creditScoreRangeLower']);
+						d['mean_monthlyLoanPayment'] = parseFloat(d['mean_monthlyLoanPayment']);
+						d['mean_borrowerAPR'] = parseFloat(d['mean_borrowerAPR']);
+						d['mean_borrowerRate'] = parseFloat(d['mean_borrowerRate']);
+						d['mean_debtToIncomeRatio'] = parseFloat(d['mean_debtToIncomeRatio']);
+						d['mean_term'] = parseFloat(d['mean_term']);
+						
+						d['count'] = parseInt(d['count']);
+						
+						d['sum_loanOriginalAmount'] = parseFloat(d['sum_loanOriginalAmount']);
+						d['sum_investors'] = parseFloat(d['sum_investors']);
+						d['sum_prosperScore'] = parseFloat(d['sum_prosperScore']);
+						d['sum_amountDelinquent'] = parseFloat(d['sum_amountDelinquent']);
+						d['sum_estimatedLoss'] = parseFloat(d['sum_estimatedLoss']);
+						d['sum_estimatedReturn'] = parseFloat(d['sum_estimatedReturn']);
+						d['sum_statedMonthlyIncome'] = parseFloat(d['sum_statedMonthlyIncome'])	
+						d['sum_creditScoreRangeLower'] = parseFloat(d['sum_creditScoreRangeLower'])	
+						d['sum_monthlyLoanPayment'] = parseFloat(d['sum_monthlyLoanPayment'])
+						d['sum_borrowerAPR'] = parseFloat(d['sum_borrowerAPR']);
+						d['sum_borrowerRate'] = parseFloat(d['sum_borrowerRate']);
+						d['sum_debtToIncomeRatio'] = parseFloat(d['sum_debtToIncomeRatio']);
+						d['sum_term'] = parseFloat(d['sum_term']);
+					});
+					
+					occupationSummaryData = data;
+				});
+			}
+			
+			function buildLoanDetailHistogram(data, chart, year, key) {
+			
+				dataSubset = getDataSubset(data, year);
+			
+				var graphPosX = 465,
+					prevPosY = 10,
+					sum = d3.sum(dataSubset, function(d) {
+						if (d['ListingCreationYear'] == year)
+							return d[key];
+						else return 0;
+					}),
+					colors = d3.scale.category20();
+				
+				var posY = d3.scale.linear()
+					.domain([0, sum])
+					.range([0, chartHeight]);
+					
+				// Bind data to visuals
+				var bar = chart.selectAll("g")
+					.data(dataSubset)
+					.enter()
+					.append("g")
+					.attr("transform", function(d, i) {
+
+						lastEndPointY = prevPosY;
+						prevPosY = lastEndPointY + posY(d[key]);
+						
+						return "translate(" + graphPosX + "," + lastEndPointY + ")";
+					});
+				
+				// Build visual bar objects.
+				bar.append("rect")
+					.attr("width", barWidth)
+					.attr("height", function(d) {
+						var value = posY(d[key]) - 1;
+						if (value < 0) value = 0;
+						
+						return value; 
+					})
+					.attr("fill", function(d, i) { return colors(i); });
+					
+				// Build occupation selector bounding areas.
+				bar.append("circle")
+					.attr("cx", function(d, i) {
+						if (i % 2 == 0)
+							return 90 + ((i % 3) * 10);
+						else return -30 + ((i % 3) * 10);
+					})
+					.attr("cy", function(d) {
+						var value = (posY(d[key]) / 2) - 1;
+						if (value < 0) value = 0;
+						
+						return value; 
+					})
+					.attr("r", barWidth / 16)
+					.attr("fill", buttonInactiveColor)
+					.attr("id", function(d) {
+						return "occupationSelector_" + d["Id"];
+					})
+					.on("click", function(d) {
+						updateSelectedOccupation(d["Id"], dataSubset);
+					});
+			}
+			
+			// Builds the main summary histogram.
+			function buildLoanSummaryHistogram(data, overviewChartId, chartTitle, barKey, colorKey, colorScaleLabel, transformScaleLabel) {
+			
+				var legendBarHeight = 40,
+					legendBarTextOffset = 15,
+					colorScaleMax = d3.max(data, function(d) {
+							return d[colorKey];
+						}),
+					colorScaleMin = 0,
+					transformScaleMax = d3.max(data, function(d) { return d[barKey]; }),
+					transformScaleMin = d3.min(data, function(d) { return d[barKey]; }),
+					titleTextSize = "1.5em",
+					labelTextSize = ".8em",
+					sumTextSize = "1em",
+					yearTextSize = "1em",
+					avgTextSize = "1em";
+					
+				// Build transformations
+				var colorGrad = d3.scale.linear()
+					.domain([colorScaleMin, colorScaleMax])
+					.range(["blue", "red"]);
+
+				var posY = d3.scale.linear()
+					.domain([transformScaleMin, transformScaleMax])
+					.range([chartHeight, 0]);
+				
+				var scaleY = d3.scale.linear()
+					.domain([transformScaleMin, transformScaleMax])
+					.range([0, chartHeight]);
+					
+				// Initialize chart
+				var chart = d3.select(overviewChartId)
+					.attr("width", barWidth * (data.length + 1) + (2 * margin) + 100)
+					.attr("height", chartHeight + (2 * margin) + 60);
+
+				// Bind data to visuals
+				var bar = chart.selectAll("g")
+					.data(data)
+					.enter()
+					.append("g")
+					.attr("transform", function(d, i) {
+						if (isNaN(data[i][barKey]))
+							return "translate(" + ((i * barWidth) + margin) + ",0)";
+						else return "translate(" + ((i * barWidth) + margin) + "," + parseInt(posY(data[i][barKey]) + margin) + ")";
+					});
+				
+				// Build visual bar objects.
+				bar.append("rect")
+					.attr("width", barWidth - 1)
+					.attr("height", function(d) {
+						if (isNaN(d[barKey]))
+							return 0;
+						else return scaleY(d[barKey]); 
+					})
+					.attr("fill", function(d) { return colorGrad(d[colorKey]); });
+
+				// Attach chart title text
+				chart.append("text")
+					.attr("x", (barWidth * data.length) / 2)
+					.attr("y", 20)
+					.style("font-size", titleTextSize)
+					.text(chartTitle);
+
+				// Attach sum amount text
+				bar.append("text")
+					.attr("x", 0)
+					.attr("y", -5)
+					.attr("fill", "black")
+					.style("font-size", sumTextSize)
+					.text(function(d) { return parseInt(d[barKey]); });
+				
+				// Build selecting bounding areas.
+				bar.append("circle")
+					.attr("cx", 55)
+					.attr("cy", function(d) {
+						if (isNaN(d[barKey]))
+							return margin + chartHeight + 50;
+						else return scaleY(d[barKey]) + 50;
+					})
+					.attr("r", barWidth / 4)
+					.attr("fill", buttonInactiveColor)
+					.attr("id", function(d) {
+						return "yearSelector_" + d["Id"];
+					})
+					.on("click", function(d) {
+						updateSelectedYear(d["Id"], data);
+					});
+				
+				// Attach year for each bar.
+				bar.append("text")
+					.attr("x", barWidth / 2)
+					.attr("y", function(d) {
+						if (isNaN(d[barKey]))
+							return margin + chartHeight + 15;
+						else return scaleY(d[barKey]) + 15;
+					})
+					.attr("fill", "black")
+					.style("font-size", yearTextSize)
+					.attr("opacity", function (d) {
+						if (isNaN(d[barKey]))
+							return 1;
+						else return 1;
+					})
+					.text(function(d) { return parseInt(d["ListingCreationYear"]); });
+					
+				// Build color legend
+				
+				// Max
+				chart.append("rect")
+					.attr("x", (10 * barWidth) + margin)
+					.attr("y", legendBarHeight + margin )
+					.attr("width", barWidth - 1)
+					.attr("height", legendBarHeight - 1)
+					.attr("fill", function(d) {
+						return colorGrad(colorScaleMax);
+					});
+					
+				chart.append("text")
+						.attr("x", (10 * barWidth) + margin + legendBarTextOffset)
+						.attr("y", legendBarHeight + margin + legendBarTextOffset)
+						.attr("fill", "white")
+						.style("font-size", avgTextSize)
+						.text(function() { return parseInt(colorScaleMax); });
+				
+				// Mid
+				chart.append("rect")
+					.attr("x", (10 * barWidth) + margin)
+					.attr("y", (legendBarHeight * 2) + margin)
+					.attr("width", barWidth - 1)
+					.attr("height", legendBarHeight - 1)
+					.attr("fill", function(d) {
+						return colorGrad(colorScaleMin + ((colorScaleMax - colorScaleMin) / 2));
+					})
+					
+				chart.append("text")
+					.attr("x", (10 * barWidth) + margin + legendBarTextOffset)
+					.attr("y", (legendBarHeight * 2) + margin + legendBarTextOffset)
+					.attr("fill", "white")
+					.style("font-size", avgTextSize)
+					.text(function() { return parseInt(colorScaleMin + ((colorScaleMax - colorScaleMin) / 2)); });
+				
+				// Min
+				chart.append("rect")
+					.attr("x", (10 * barWidth) + margin)
+					.attr("y", (legendBarHeight * 3) + margin)
+					.attr("width", barWidth - 1)
+					.attr("height", legendBarHeight - 1)
+					.attr("fill", function(d) {
+						return colorGrad(colorScaleMin);
+					})
+
+				chart.append("text")
+					.attr("x", (10 * barWidth) + margin + legendBarTextOffset)
+					.attr("y", (legendBarHeight * 3) + margin + legendBarTextOffset)
+					.attr("fill", "white")
+					.style("font-size", avgTextSize)
+					.text(function() { return parseInt(colorScaleMin); });
+						
+				// Transform scale label
+				chart.append("text")
+					.attr("x", 0)
+					.attr("y", 15)
+					.attr("fill", "black")
+					.style("font-size", labelTextSize)
+					.text(transformScaleLabel);
+
+				// Color scale label
+				chart.append("text")
+					.attr("x", (10 * barWidth) + margin)
+					.attr("y", 15)
+					.attr("fill", "black")
+					.style("font-size", labelTextSize)
+					.text(colorScaleLabel);
+					
+				// Draw transform axis line
+				chart.append("line")
+					.attr("x1", 10)
+					.attr("y1", margin)
+					.attr("x2", 10)
+					.attr("y2", chartHeight + margin)
+					.attr("stroke", "grey")
+					.attr("stroke-width", "2");
+					
+				chart.append("line")
+					.attr("x1", 5)
+					.attr("y1", margin)
+					.attr("x2", 15)
+					.attr("y2", margin)
+					.attr("stroke", "grey")
+					.attr("stroke-width", "2");
+					
+				chart.append("line")
+					.attr("x1", 5)
+					.attr("y1", chartHeight + margin)
+					.attr("x2", 15)
+					.attr("y2", chartHeight + margin)
+					.attr("stroke", "grey")
+					.attr("stroke-width", "2");
+			}
+			
+			// Build details chart to display data about the selected year.
+			function buildDetailChart(detailChartId, data, chartHeight, barWidth) {
+			
+				var textHeight = 15,
+					windowXPos = 10,
+					windowYPos = 10,
+					textXOffset = 10,
+					textColor = "black",
+					textSize = ".35em",
+					opacity = 0,
+					textClass = "infoWindowText",
+					occupationWindowXPos = 600,
+					occupationWindowYPos = 10;
+			
+				// Initialize chart for drawing to.
+				var chart = d3.select(detailChartId)
+					.attr("width", barWidth * data.length + (2 * margin) + 180)
+					.attr("height", chartHeight + (2 * margin));
+			
+				// Build detail window for year.
+				chart.append("rect")
+					.attr("x", windowXPos)
+					.attr("y", windowYPos)
+					.attr("width", 400)
+					.attr("height", textHeight * 20)
+					.attr("fill", "aquamarine")
+					.attr("opacity", opacity)
+					.attr("id", "infoWindow");
+				
+				// Loan count
+				chart.append("text")
+					.attr("x", windowXPos + textXOffset)
+					.attr("y", windowYPos + (textHeight * 1))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "year_count_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				// Loan amount
+				chart.append("text")
+					.attr("x", windowXPos + textXOffset)
+					.attr("y", windowYPos + (textHeight * 2))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "year_sum_loanOriginalAmount_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+
+				chart.append("text")
+					.attr("x", windowXPos + textXOffset)
+					.attr("y", windowYPos + (textHeight * 3))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "year_mean_loanOriginalAmount_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				// Investors
+				chart.append("text")
+					.attr("x", windowXPos + textXOffset)
+					.attr("y", windowYPos + (textHeight * 4))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "year_sum_investors_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				chart.append("text")
+					.attr("x", windowXPos + textXOffset)
+					.attr("y", windowYPos + (textHeight * 5))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "year_mean_investors_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				// Estimated loss
+				chart.append("text")
+					.attr("x", windowXPos + textXOffset)
+					.attr("y", windowYPos + (textHeight * 6))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "year_mean_estimatedLoss_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+
+				// Estimated return	
+				chart.append("text")
+					.attr("x", windowXPos + textXOffset)
+					.attr("y", windowYPos + (textHeight * 7))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "year_mean_estimatedReturn_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				// Amount delinquent
+				chart.append("text")
+					.attr("x", windowXPos + textXOffset)
+					.attr("y", windowYPos + (textHeight * 8))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "year_sum_amountDelinquent_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+
+				chart.append("text")
+					.attr("x", windowXPos + textXOffset)
+					.attr("y", windowYPos + (textHeight * 9))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "year_mean_amountDelinquent_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");				
+
+				// Prosper score	
+				chart.append("text")
+					.attr("x", windowXPos + textXOffset)
+					.attr("y", windowYPos + (textHeight * 10))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "year_mean_prosperScore_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+					
+				// Stated monthly income
+				chart.append("text")
+					.attr("x", windowXPos + textXOffset)
+					.attr("y", windowYPos + (textHeight * 11))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "year_sum_statedMonthlyIncome_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				chart.append("text")
+					.attr("x", windowXPos + textXOffset)
+					.attr("y", windowYPos + (textHeight * 12))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "year_mean_statedMonthlyIncome_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+					
+				// Credit score
+				chart.append("text")
+					.attr("x", windowXPos + textXOffset)
+					.attr("y", windowYPos + (textHeight * 13))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "year_mean_creditScoreRangeLower_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				// Monthly loan payment;
+				chart.append("text")
+					.attr("x", windowXPos + textXOffset)
+					.attr("y", windowYPos + (textHeight * 14))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "year_sum_monthlyLoanPayment_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				chart.append("text")
+					.attr("x", windowXPos + textXOffset)
+					.attr("y", windowYPos + (textHeight * 15))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "year_mean_monthlyLoanPayment_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+
+				// Borrower APR
+				chart.append("text")
+					.attr("x", windowXPos + textXOffset)
+					.attr("y", windowYPos + (textHeight * 16))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "year_mean_borrowerAPR_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				// Borrower rate
+				chart.append("text")
+					.attr("x", windowXPos + textXOffset)
+					.attr("y", windowYPos + (textHeight * 17))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "year_mean_borrowerRate_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				// Debt to income ratio
+				chart.append("text")
+					.attr("x", windowXPos + textXOffset)
+					.attr("y", windowYPos + (textHeight * 18))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "year_mean_debtToIncomeRatio_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				// Term
+				chart.append("text")
+					.attr("x", windowXPos + textXOffset)
+					.attr("y", windowYPos + (textHeight * 19))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "year_mean_term_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+					
+				// Build occupation detail chart.
+				
+				// Build background box
+				chart.append("rect")
+					.attr("x", occupationWindowXPos)
+					.attr("y", occupationWindowYPos)
+					.attr("width", 400)
+					.attr("height", textHeight * 21)
+					.attr("fill", "aquamarine")
+					.attr("opacity", opacity)
+					.attr("id", "occupationInfoWindow");
+					
+				// Occupation name
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 1))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_name_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				// Loan count
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 2))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_count_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				// Loan amount
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 3))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_sum_loanOriginalAmount_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 4))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_mean_loanOriginalAmount_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				// Investors
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 5))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_sum_investors_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 6))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_mean_investors_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				// Estimated loss
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 7))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_mean_estimatedLoss_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+
+				// Estimated return	
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 8))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_mean_estimatedReturn_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				// Amount delinquent
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 9))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_sum_amountDelinquent_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 10))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_mean_amountDelinquent_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");				
+
+				// Prosper score	
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 11))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_mean_prosperScore_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+					
+				// Stated monthly income
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 12))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_sum_statedMonthlyIncome_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 13))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_mean_statedMonthlyIncome_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+					
+				// Credit score
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 14))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_mean_creditScoreRangeLower_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				// Monthly loan payment;
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 15))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_sum_monthlyLoanPayment_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 16))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_mean_monthlyLoanPayment_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+
+				// Borrower APR
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 17))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_mean_borrowerAPR_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				// Borrower rate
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 18))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_mean_borrowerRate_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				// Debt to income ratio
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 19))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_mean_debtToIncomeRatio_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+				
+				// Term
+				chart.append("text")
+					.attr("x", occupationWindowXPos + textXOffset)
+					.attr("y", occupationWindowYPos + (textHeight * 20))
+					.attr("fill", textColor)
+					.attr("dy", textSize)
+					.attr("id", "occupation_mean_term_text")
+					.attr("opacity", opacity)
+					.attr("class", textClass)
+					.text("");
+			}
+			
+			// Updates detail chart containing data about the selected year.
+			function updateYearDetailChart(id, data) {
+				
+				var summary = getDataPoint(id, data),
+					opacity = 1;
+				
+				if (summary == null) return;
+				
+				buildLoanDetailHistogram(occupationSummaryData, d3.select(detailChartId), summary['ListingCreationYear'], 'sum_loanOriginalAmount');
+			
+				d3.select("#infoWindow").attr("opacity", opacity);
+				
+				// Loan count
+				d3.select("#year_count_text")
+					.attr("opacity", opacity)
+					.text("Total number of loans: " + summary['count']);
+				
+				// Loan amount
+				d3.select("#year_sum_loanOriginalAmount_text")
+					.attr("opacity", opacity)
+					.text("Total amount of money loaned: $" + parseInt(summary['sum_loanOriginalAmount']));
+				
+				d3.select("#year_mean_loanOriginalAmount_text")
+					.attr("opacity", opacity)
+					.text("Average amount of money loaned: $" + parseInt(summary['mean_loanOriginalAmount']));
+					
+				// Investors
+				d3.select("#year_sum_investors_text")
+					.attr("opacity", opacity)
+					.text("Total number of investors: " + parseInt(summary['sum_investors']));	
+				
+				d3.select("#year_mean_investors_text")
+					.attr("opacity", opacity)
+					.text("Average number of investors per loan: " + parseInt(summary['mean_investors']));
+					
+				// Estimated loss
+				d3.select("#year_mean_estimatedLoss_text")
+					.attr("opacity", opacity)
+					.text("Average estimated loss per loan: " + parseInt(summary['mean_estimatedLoss']));
+
+				// Estimated return
+				d3.select("#year_mean_estimatedReturn_text")
+					.attr("opacity", opacity)
+					.text("Average estimated return per loan: " + parseInt(summary['mean_estimatedReturn']));
+
+				// Amount delinquent
+				d3.select("#year_sum_amountDelinquent_text")
+					.attr("opacity", opacity)
+					.text("Total amount of delinquent money: $" + parseInt(summary['sum_amountDelinquent']));
+				
+				d3.select("#year_mean_amountDelinquent_text")
+					.attr("opacity", opacity)
+					.text("Average amount of delinquent money per loan: $" + parseInt(summary['mean_amountDelinquent']));
+
+				// Prosper score
+				d3.select("#year_mean_prosperScore_text")
+					.attr("opacity", opacity)
+					.text("Average Prosper score per loan: " + parseInt(summary['mean_prosperScore']));
+
+				// Stated monthly income
+				d3.select("#year_sum_statedMonthlyIncome_text")
+					.attr("opacity", opacity)
+					.text("Total stated annual income: $" + parseInt(12 * summary['sum_statedMonthlyIncome']));
+					
+				d3.select("#year_mean_statedMonthlyIncome_text")
+					.attr("opacity", opacity)
+					.text("Average stated annual income: $" + parseInt(12 * summary['mean_statedMonthlyIncome']));
+							
+				// Credit score
+				d3.select("#year_mean_creditScoreRangeLower_text")
+					.attr("opacity", opacity)
+					.text("Average lowest credit score: " + parseInt(summary['mean_creditScoreRangeLower']));
+				
+				// Monthly loan payment
+				d3.select("#year_mean_monthlyLoanPayment_text")
+					.attr("opacity", opacity)
+					.text("Average yearly loan payment: $" + parseInt(12 * summary['mean_monthlyLoanPayment']));
+					
+				d3.select("#year_sum_monthlyLoanPayment_text")
+					.attr("opacity", opacity)
+					.text("Total yearly loan payment: $" + parseInt(12 * summary['sum_statedMonthlyIncome']));
+
+				// Borrower APR
+				d3.select("#year_mean_borrowerAPR_text")
+					.attr("opacity", opacity)
+					.text("Average borrower APR: " + summary['mean_borrowerAPR']);
+				
+				// Borrower rate
+				d3.select("#year_mean_borrowerRate_text")
+					.attr("opacity", opacity)
+					.text("Average borrower rate: " + summary['mean_borrowerRate']);
+				
+				// Debt to income ratio
+				d3.select("#year_mean_debtToIncomeRatio_text")
+					.attr("opacity", opacity)
+					.text("Average debt to income ratio: " + summary['mean_debtToIncomeRatio']);
+				
+				// Term
+				d3.select("#year_mean_term_text")
+					.attr("opacity", opacity)
+					.text("Average loan payment term: " + parseInt(summary['mean_term']) + " months");
+			}
+			
+			// Updates detail chart containing data about the selected occupation.
+			function updateOccupationDetailChart(id, data) {
+				
+				var summary = getDataPoint(id, data),
+					opacity = 1;
+				
+				if (summary == null) return;
+			
+				d3.select("#occupationInfoWindow").attr("opacity", opacity);
+				
+				// Occupation name
+				d3.select("#occupation_name_text")
+					.attr("opacity", opacity)
+					.text("Occupation: " + summary['Occupation']);
+
+				// Loan count
+				d3.select("#occupation_count_text")
+					.attr("opacity", opacity)
+					.text("Total number of loans: " + summary['count']);
+				
+				// Loan amount
+				d3.select("#occupation_sum_loanOriginalAmount_text")
+					.attr("opacity", opacity)
+					.text("Total amount of money loaned: $" + parseInt(summary['sum_loanOriginalAmount']));
+				
+				d3.select("#occupation_mean_loanOriginalAmount_text")
+					.attr("opacity", opacity)
+					.text("Average amount of money loaned: $" + parseInt(summary['mean_loanOriginalAmount']));
+					
+				// Investors
+				d3.select("#occupation_sum_investors_text")
+					.attr("opacity", opacity)
+					.text("Total number of investors: " + parseInt(summary['sum_investors']));	
+				
+				d3.select("#occupation_mean_investors_text")
+					.attr("opacity", opacity)
+					.text("Average number of investors per loan: " + parseInt(summary['mean_investors']));
+					
+				// Estimated loss
+				d3.select("#occupation_mean_estimatedLoss_text")
+					.attr("opacity", opacity)
+					.text("Average estimated loss per loan: " + parseInt(summary['mean_estimatedLoss']));
+
+				// Estimated return
+				d3.select("#occupation_mean_estimatedReturn_text")
+					.attr("opacity", opacity)
+					.text("Average estimated return per loan: " + parseInt(summary['mean_estimatedReturn']));
+
+				// Amount delinquent
+				d3.select("#occupation_sum_amountDelinquent_text")
+					.attr("opacity", opacity)
+					.text("Total amount of delinquent money: $" + parseInt(summary['sum_amountDelinquent']));
+				
+				d3.select("#occupation_mean_amountDelinquent_text")
+					.attr("opacity", opacity)
+					.text("Average amount of delinquent money per loan: $" + parseInt(summary['mean_amountDelinquent']));
+
+				// Prosper score
+				d3.select("#occupation_mean_prosperScore_text")
+					.attr("opacity", opacity)
+					.text("Average Prosper score per loan: " + parseInt(summary['mean_prosperScore']));
+
+				// Stated monthly income
+				d3.select("#occupation_sum_statedMonthlyIncome_text")
+					.attr("opacity", opacity)
+					.text("Total stated annual income: $" + parseInt(12 * summary['sum_statedMonthlyIncome']));
+					
+				d3.select("#occupation_mean_statedMonthlyIncome_text")
+					.attr("opacity", opacity)
+					.text("Average stated annual income: $" + parseInt(12 * summary['mean_statedMonthlyIncome']));
+							
+				// Credit score
+				d3.select("#occupation_mean_creditScoreRangeLower_text")
+					.attr("opacity", opacity)
+					.text("Average lowest credit score: " + parseInt(summary['mean_creditScoreRangeLower']));
+				
+				// Monthly loan payment
+				d3.select("#occupation_mean_monthlyLoanPayment_text")
+					.attr("opacity", opacity)
+					.text("Average yearly loan payment: $" + parseInt(12 * summary['mean_monthlyLoanPayment']));
+					
+				d3.select("#occupation_sum_monthlyLoanPayment_text")
+					.attr("opacity", opacity)
+					.text("Total yearly loan payment: $" + parseInt(12 * summary['sum_statedMonthlyIncome']));
+
+				// Borrower APR
+				d3.select("#occupation_mean_borrowerAPR_text")
+					.attr("opacity", opacity)
+					.text("Average borrower APR: " + summary['mean_borrowerAPR']);
+				
+				// Borrower rate
+				d3.select("#occupation_mean_borrowerRate_text")
+					.attr("opacity", opacity)
+					.text("Average borrower rate: " + summary['mean_borrowerRate']);
+				
+				// Debt to income ratio
+				d3.select("#occupation_mean_debtToIncomeRatio_text")
+					.attr("opacity", opacity)
+					.text("Average debt to income ratio: " + summary['mean_debtToIncomeRatio']);
+				
+				// Term
+				d3.select("#occupation_mean_term_text")
+					.attr("opacity", opacity)
+					.text("Average loan payment term: " + parseInt(summary['mean_term']) + " months");
+			}
+			
+			// Function for grabbing a data point using an id value.
+			function getDataPoint(id, data) {
+				for (i = 0; i < data.length; i++)
+					if (data[i]['Id'] == id)
+						return data[i];
+				
+				return null;
+			}
+			
+			function getDataSubset(data, year) {
+				dataSubset = [];
+				
+				for (i = 0; i < data.length; i++)
+					if (data[i]['ListingCreationYear'] == year)
+						dataSubset.push(data[i]);
+						
+				return dataSubset;
+			}
+
+		</script>
+	</head>
+	
+	<body>
+	
+		<select name="chartSelector" onchange="displayChart(this.value);">
+		  <option value="loanOriginalAmount">Amount of money loaned</option>
+		  <option value="investors">Number of investors</option>
+		  <option value="amountDelinquent">Amount delinquent</option>
+		  <option value="statedMonthlyIncome">Monthly income</option>
+		  <option value="monthlyLoanPayment">Monthly payment</option>
+		</select>
+
+		<br />
+
+		<svg id="overviewChart" class="chart"></svg>
+
+		<br />
+
+		<svg id="detailChart" class="chart"></svg>
+
+
+	</body>
+	
+</html>
