@@ -230,9 +230,7 @@
 				// Build occupation selector bounding areas.
 				bar.append("circle")
 					.attr("cx", function(d, i) {
-						if (i % 2 == 0)
-							return 90 + ((i % 3) * 10);
-						else return -30 + ((i % 3) * 10);
+						return 90;
 					})
 					.attr("cy", function(d) {
 						var value = (posY(d[key]) / 2) - 1;
@@ -354,100 +352,7 @@
 						else return 1;
 					})
 					.text(function(d) { return parseInt(d["ListingCreationYear"]); });
-					
-				// Build color legend
 				
-				// Max
-				chart.append("rect")
-					.attr("x", (10 * barWidth) + margin)
-					.attr("y", legendBarHeight + margin )
-					.attr("width", barWidth - 1)
-					.attr("height", legendBarHeight - 1)
-					.attr("fill", function(d) {
-						return colorGrad(colorScaleMax);
-					});
-					
-				chart.append("text")
-						.attr("x", (10 * barWidth) + margin + legendBarTextOffset)
-						.attr("y", legendBarHeight + margin + legendBarTextOffset)
-						.attr("fill", "white")
-						.style("font-size", avgTextSize)
-						.text(function() { return parseInt(colorScaleMax); });
-				
-				// Mid
-				chart.append("rect")
-					.attr("x", (10 * barWidth) + margin)
-					.attr("y", (legendBarHeight * 2) + margin)
-					.attr("width", barWidth - 1)
-					.attr("height", legendBarHeight - 1)
-					.attr("fill", function(d) {
-						return colorGrad(colorScaleMin + ((colorScaleMax - colorScaleMin) / 2));
-					})
-					
-				chart.append("text")
-					.attr("x", (10 * barWidth) + margin + legendBarTextOffset)
-					.attr("y", (legendBarHeight * 2) + margin + legendBarTextOffset)
-					.attr("fill", "white")
-					.style("font-size", avgTextSize)
-					.text(function() { return parseInt(colorScaleMin + ((colorScaleMax - colorScaleMin) / 2)); });
-				
-				// Min
-				chart.append("rect")
-					.attr("x", (10 * barWidth) + margin)
-					.attr("y", (legendBarHeight * 3) + margin)
-					.attr("width", barWidth - 1)
-					.attr("height", legendBarHeight - 1)
-					.attr("fill", function(d) {
-						return colorGrad(colorScaleMin);
-					})
-
-				chart.append("text")
-					.attr("x", (10 * barWidth) + margin + legendBarTextOffset)
-					.attr("y", (legendBarHeight * 3) + margin + legendBarTextOffset)
-					.attr("fill", "white")
-					.style("font-size", avgTextSize)
-					.text(function() { return parseInt(colorScaleMin); });
-						
-				// Transform scale label
-				chart.append("text")
-					.attr("x", 0)
-					.attr("y", 15)
-					.attr("fill", "black")
-					.style("font-size", labelTextSize)
-					.text(transformScaleLabel);
-
-				// Color scale label
-				chart.append("text")
-					.attr("x", (10 * barWidth) + margin)
-					.attr("y", 15)
-					.attr("fill", "black")
-					.style("font-size", labelTextSize)
-					.text(colorScaleLabel);
-					
-				// Draw transform axis line
-				chart.append("line")
-					.attr("x1", 10)
-					.attr("y1", margin)
-					.attr("x2", 10)
-					.attr("y2", chartHeight + margin)
-					.attr("stroke", "grey")
-					.attr("stroke-width", "2");
-					
-				chart.append("line")
-					.attr("x1", 5)
-					.attr("y1", margin)
-					.attr("x2", 15)
-					.attr("y2", margin)
-					.attr("stroke", "grey")
-					.attr("stroke-width", "2");
-					
-				chart.append("line")
-					.attr("x1", 5)
-					.attr("y1", chartHeight + margin)
-					.attr("x2", 15)
-					.attr("y2", chartHeight + margin)
-					.attr("stroke", "grey")
-					.attr("stroke-width", "2");
 			}
 			
 			// Build details chart to display data about the selected year.
